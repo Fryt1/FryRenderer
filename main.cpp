@@ -61,9 +61,11 @@ int main() {
     glm::vec3 light_Color(1.0f, 1.0f, 1.0f);
     float light_instansity = 1.0f;
     CLight light(light_Dir,light_instansity,light_Color);
+    light.setlightviewMatrix();
 
     //初始化阴影设置
     ShadowSetting shadowSetting;
+
     
     
     //scene初始化
@@ -84,6 +86,7 @@ int main() {
         scene.AddModel(model);
         scene.AddCamera(Ccamera);
         scene.AddLight(light);
+        scene.SetShadowSetting(shadowSetting);
         
         scene.setViewMatrix(Ccamera.GetViewMatrix());
 

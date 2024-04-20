@@ -40,7 +40,7 @@ public:
     void AddCamera(CCamera camera);
     void AddLight(CLight light);
 
-    void SetShadowSetting(ShadowSetting _shadowMapSize);
+    void SetShadowSetting(ShadowSetting &_shadowMapSize);
 
     void setModelMatrix(glm::mat4 modelMatrix);
     void setViewMatrix(glm::mat4 viewMatrix);

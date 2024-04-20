@@ -22,7 +22,7 @@ void CScene::AddLight(CLight light)
     lights.push_back(light);
 }
 
-void CScene::SetShadowSetting(ShadowSetting _shadowMapSize)
+void CScene::SetShadowSetting(ShadowSetting &_shadowMapSize)
 {
     shadowSetting = _shadowMapSize;
     shadowSetting.CreateShadowMapFB();
