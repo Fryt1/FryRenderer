@@ -18,7 +18,9 @@ class CModel
         {
             loadModel(path);
         }
-        void Draw(Shader shader);
+        void DrawModel(Shader shader);
+
+        void DrawModel_SM(Shader shader);
 
         void setmodelMatrix(glm::mat4 modelMatrix);
  

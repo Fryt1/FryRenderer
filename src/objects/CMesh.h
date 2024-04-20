@@ -36,11 +36,15 @@ class CMesh {
         /*  函数  */
         CMesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<Texture> textures);
         void Draw(Shader shader);
+        void Draw_SM(Shader shader);
     private:
         /*  渲染数据  */
         unsigned int VAO, VBO, EBO;
+        //阴影渲染数据
+        unsigned int VAO_SM, VBO_SM, EBO_SM;
         /*  函数  */
         void setupMesh();
+        void setupMesh_SM();
 };  
 
 #endif

@@ -41,9 +41,10 @@ int main() {
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
     Shader ourShader("src/shaders/phongshaders/vertex.glsl", "src/shaders/phongshaders/fragment.glsl");
-    ourShader.use();
+    Shader depthShader("src/shaders/shadowmapshaders/vertex.glsl", "src/shaders/shadowmapshaders/fragment.glsl");
+   
     //初始化场景
-    CScene scene;
+    CScene scene(WIDTH,HEIGHT);
 
     //初始化相机
     glm::vec3 camera_Pos(2.0f, 2.0f, 7.0f);
@@ -61,11 +62,21 @@ int main() {
     float light_instansity = 1.0f;
     CLight light(light_Dir,light_instansity,light_Color);
 
+    //初始化阴影设置
+    ShadowSetting shadowSetting;
+    
+    
+    //scene初始化
     scene.setModelMatrix(glm::mat4(1.0f));
 
     scene.setProjectionMatrix(Ccamera.GetProgectionMatrix(glm::radians(45.0f), (float)WIDTH / (float)HEIGHT, 0.1f, 100.0f));
 
     scene.setModelToWorldNormalMatrix(scene.modelMatrix);
+
+    scene.setModelMatrix_SM(scene.modelMatrix);
+    scene.setViewMatrix_SM(light.getlightviewMatrix());
+    scene.setProjectionMatrix_SM(glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, 0.1f, 100.0f));
+
 
     glEnable(GL_DEPTH_TEST);
     while (!glfwWindowShouldClose(window)) {
@@ -73,11 +84,11 @@ int main() {
         scene.AddModel(model);
         scene.AddCamera(Ccamera);
         scene.AddLight(light);
-
+        
         scene.setViewMatrix(Ccamera.GetViewMatrix());
 
 
-        scene.drawScene(ourShader);
+        scene.drawScene(ourShader,depthShader);
 
 
         glfwSwapBuffers(window);

@@ -8,11 +8,18 @@ void CModel::setmodelMatrix(glm::mat4 modelMatrix)
     this->modelMatrix = modelMatrix;
 }   
 
-void CModel::Draw(Shader shader)
+void CModel::DrawModel(Shader shader)
 {   
     
     for(unsigned int i = 0; i < meshes.size(); i++)
         meshes[i].Draw(shader);
+}
+
+void CModel::DrawModel_SM(Shader shader)
+{   
+    
+    for(unsigned int i = 0; i < meshes.size(); i++)
+        meshes[i].Draw_SM(shader);
 }
 
 void CModel::loadModel(std::string path)
