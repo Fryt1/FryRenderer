@@ -22,6 +22,7 @@ public:
 
 
     GLuint depthMapFBO;
+    
     GLuint depthMap;
 
     Shader depthShader;

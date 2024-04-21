@@ -25,7 +25,7 @@ void CScene::AddLight(CLight light)
 void CScene::SetShadowSetting(ShadowSetting &_shadowMapSize)
 {
     shadowSetting = _shadowMapSize;
-    shadowSetting.CreateShadowMapFB();
+    //shadowSetting.CreateShadowMapFB();
 }
 
 void CScene::setModelMatrix(glm::mat4 modelMatrix)
@@ -106,10 +106,11 @@ void CScene::drawModel_SM(Shader shader, glm::mat4 modelMatrix, glm::mat4 viewMa
 {
     shader.use();
     shader.setMat4("uModelMatrix", modelMatrix_SM);
-    shader.setMat4("uViewMatrix", viewMatrix_SM);
+    shader.setMat4("uModelViewMatrix", viewMatrix_SM);
     shader.setMat4("uProjectionMatrix", projectionMatrix_SM);
 
     // 1. 首选渲染深度贴图
+    glEnable(GL_DEPTH_TEST);
     glViewport(0, 0, shadowSetting.shadowMapSize, shadowSetting.shadowMapSize);
     glBindFramebuffer(GL_FRAMEBUFFER, shadowSetting.depthMapFBO);
     glClear(GL_DEPTH_BUFFER_BIT);

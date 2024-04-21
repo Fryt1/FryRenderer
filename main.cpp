@@ -40,8 +40,31 @@ int main() {
 
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
+
+    // 1. 创建一个四边形的顶点和纹理坐标
+    float quadVertices[] = {
+        // positions        // texture Coords
+        -1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
+        -1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
+        1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
+        1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
+    };
+
+    // setup quad VAO
+    unsigned int quadVAO, quadVBO;
+    glGenVertexArrays(1, &quadVAO);
+    glGenBuffers(1, &quadVBO);
+    glBindVertexArray(quadVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+
     Shader ourShader("src/shaders/phongshaders/vertex.glsl", "src/shaders/phongshaders/fragment.glsl");
     Shader depthShader("src/shaders/shadowmapshaders/vertex.glsl", "src/shaders/shadowmapshaders/fragment.glsl");
+    Shader screenShader("src/shaders/screenShaders/vertex.glsl", "src/shaders/screenShaders/fragment.glsl");
    
     //初始化场景
     CScene scene(WIDTH,HEIGHT);
@@ -63,6 +86,7 @@ int main() {
     CLight light(light_Dir,light_instansity,light_Color);
     light.setlightviewMatrix();
 
+
     //初始化阴影设置
     ShadowSetting shadowSetting;
 
@@ -75,9 +99,12 @@ int main() {
 
     scene.setModelToWorldNormalMatrix(scene.modelMatrix);
 
-    scene.setModelMatrix_SM(scene.modelMatrix);
+    scene.setModelMatrix_SM(glm::mat4(1.0f));
     scene.setViewMatrix_SM(light.getlightviewMatrix());
-    scene.setProjectionMatrix_SM(glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, 0.1f, 100.0f));
+    scene.setProjectionMatrix_SM(glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, 1.0f, 100.0f));
+
+    scene.SetShadowSetting(shadowSetting);
+    scene.shadowSetting.CreateShadowMapFB();
 
 
     glEnable(GL_DEPTH_TEST);
@@ -86,12 +113,17 @@ int main() {
         scene.AddModel(model);
         scene.AddCamera(Ccamera);
         scene.AddLight(light);
-        scene.SetShadowSetting(shadowSetting);
-        
+
         scene.setViewMatrix(Ccamera.GetViewMatrix());
 
 
         scene.drawScene(ourShader,depthShader);
+
+        // 绘制四边形
+        screenShader.use();
+        glBindVertexArray(quadVAO);
+        glBindTexture(GL_TEXTURE_2D,scene.shadowSetting.depthMap); // 绑定shadowmap
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
 
         glfwSwapBuffers(window);
