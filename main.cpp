@@ -41,26 +41,6 @@ int main() {
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
 
-    // 1. 创建一个四边形的顶点和纹理坐标
-    float quadVertices[] = {
-        // positions        // texture Coords
-        -1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
-        -1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
-        1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
-        1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
-    };
-
-    // setup quad VAO
-    unsigned int quadVAO, quadVBO;
-    glGenVertexArrays(1, &quadVAO);
-    glGenBuffers(1, &quadVBO);
-    glBindVertexArray(quadVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
 
     Shader ourShader("src/shaders/phongshaders/vertex.glsl", "src/shaders/phongshaders/fragment.glsl");
     Shader depthShader("src/shaders/shadowmapshaders/vertex.glsl", "src/shaders/shadowmapshaders/fragment.glsl");
@@ -80,7 +60,7 @@ int main() {
     CModel model(path);
 
     //初始化光源
-    glm::vec3 light_Dir(0.0f, 0.0f, 1.0f);
+    glm::vec3 light_Dir(10.5f, 1.0f, 1.0f);
     glm::vec3 light_Color(1.0f, 1.0f, 1.0f);
     float light_instansity = 1.0f;
     CLight light(light_Dir,light_instansity,light_Color);
@@ -89,6 +69,7 @@ int main() {
 
     //初始化阴影设置
     ShadowSetting shadowSetting;
+    shadowSetting.setShadowMapSize(ShadowSetting::SHADOWMAPSIZE_4096);
 
     
     
@@ -119,11 +100,7 @@ int main() {
 
         scene.drawScene(ourShader,depthShader);
 
-        // 绘制四边形
-        screenShader.use();
-        glBindVertexArray(quadVAO);
-        glBindTexture(GL_TEXTURE_2D,scene.shadowSetting.depthMap); // 绑定shadowmap
-        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
 
 
         glfwSwapBuffers(window);

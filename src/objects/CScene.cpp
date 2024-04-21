@@ -94,6 +94,12 @@ void CScene::drawModel(Shader shader,glm::mat4 modelMatrix,glm::mat4 viewMatrix,
     shader.setMat4("uViewMatrix", viewMatrix);
     shader.setMat4("uProjectionMatrix", projectionMatrix);
     shader.setMat3("uModelToWorldNormalMatrix", uModelToWorldNormalMatrix);
+    shader.setMat4("uLightSpaceMatrix",  projectionMatrix_SM * viewMatrix_SM );
+    
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D,shadowSetting.depthMap); // 绑定shadowmap
+    shader.setInt("uShadowMap", 0);
+
 
     for(unsigned int i = 0; i < models.size(); i++)
     {

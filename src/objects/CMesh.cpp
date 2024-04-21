@@ -24,7 +24,7 @@ void CMesh::Draw(Shader shader)
     if (hasTexture) {
         for(unsigned int i = 0; i < textures.size(); i++)
         {
-            glActiveTexture(GL_TEXTURE0 + i); // 在绑定之前激活相应的纹理单元
+            glActiveTexture(GL_TEXTURE0 + i+1); // 在绑定之前激活相应的纹理单元
             // 获取纹理序号（diffuse_textureN 中的 N）
             std::string number;
             std::string name = textures[i].type;
@@ -33,7 +33,7 @@ void CMesh::Draw(Shader shader)
             else if(name == "texture_specular")
                 number = std::to_string(specularNr++);
 
-            shader.setInt((name + number).c_str(), i);
+            shader.setInt((name + number).c_str(), i+1);
             glBindTexture(GL_TEXTURE_2D, textures[i].id);
         }
         glActiveTexture(GL_TEXTURE0);
