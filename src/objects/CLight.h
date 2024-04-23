@@ -21,7 +21,7 @@ public:
     // 计算虚拟光源位置
     glm::vec3 lightPos ;
 
-    glm::mat4 lightProjectionMatrix;
+    glm::mat4 lightviewMatrix;
     //构造函数,初始化光照方向,强度,颜色
     CLight(glm::vec3 _direction, float _instansity, glm::vec3 _color);
 

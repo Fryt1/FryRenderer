@@ -20,6 +20,8 @@ public:
     float Width;
     float Height;
 
+    void updateWindowSize(float Width,float Height);
+
 
     CScene()=default;
     CScene(float Width,float Height);

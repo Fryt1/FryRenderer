@@ -1,7 +1,13 @@
 #include "objects/CScene.h"
 #include "CScene.h"
 
-CScene::CScene(float Width,float Height)
+void CScene::updateWindowSize(float Width, float Height)
+{
+    this->Width = Width;
+    this->Height = Height;
+}
+
+CScene::CScene(float Width, float Height)
 {
     this->Width = Width;
     this->Height = Height;
@@ -81,6 +87,7 @@ void CScene::setupLight(Shader _Modelshader)
 void CScene::drawScene(Shader _Modelshader,Shader _Modelshader_SM)
 {
     drawModel_SM(_Modelshader_SM,modelMatrix_SM,viewMatrix_SM,projectionMatrix_SM);
+
     drawModel(_Modelshader,modelMatrix,viewMatrix,projectionMatrix);
 }
 
@@ -94,7 +101,8 @@ void CScene::drawModel(Shader shader,glm::mat4 modelMatrix,glm::mat4 viewMatrix,
     shader.setMat4("uViewMatrix", viewMatrix);
     shader.setMat4("uProjectionMatrix", projectionMatrix);
     shader.setMat3("uModelToWorldNormalMatrix", uModelToWorldNormalMatrix);
-    shader.setMat4("uLightSpaceMatrix",  projectionMatrix_SM * viewMatrix_SM );
+    glm::mat4 LightSpaceMatrix = projectionMatrix_SM * viewMatrix_SM;
+    shader.setMat4("uLightSpaceMatrix",  LightSpaceMatrix );
     
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D,shadowSetting.depthMap); // 绑定shadowmap
@@ -103,6 +111,7 @@ void CScene::drawModel(Shader shader,glm::mat4 modelMatrix,glm::mat4 viewMatrix,
 
     for(unsigned int i = 0; i < models.size(); i++)
     {
+
         models[i].DrawModel(shader);
     }
 
@@ -125,6 +134,8 @@ void CScene::drawModel_SM(Shader shader, glm::mat4 modelMatrix, glm::mat4 viewMa
     {
         models[i].DrawModel_SM(shader);
     }
+            // 生成mipmap
+    glGenerateMipmap(GL_TEXTURE_2D);
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
