@@ -1,6 +1,8 @@
 #include "objects/CScene.h"
 #include "CScene.h"
 
+
+
 void CScene::updateWindowSize(float Width, float Height)
 {
     this->Width = Width;
@@ -26,6 +28,11 @@ void CScene::AddCamera(CCamera camera)
 void CScene::AddLight(CLight light)
 {
     lights.push_back(light);
+}
+
+void CScene::SetImage(CImage& image)
+{
+    images.push_back(image);
 }
 
 void CScene::SetShadowSetting(ShadowSetting &_shadowMapSize)
@@ -82,15 +89,92 @@ void CScene::setupLight(Shader _Modelshader)
 
 }
 
-
-
-void CScene::drawScene(Shader _Modelshader,Shader _Modelshader_SM)
+void CScene::drawScene(Shader _Modelshader,Shader _Modelshader_SM,Shader _CubeMapshader)
 {
+    drawCubeMap(_CubeMapshader);
+
     drawModel_SM(_Modelshader_SM,modelMatrix_SM,viewMatrix_SM,projectionMatrix_SM);
 
     drawModel(_Modelshader,modelMatrix,viewMatrix,projectionMatrix);
 }
 
+void CScene::drawCubeMap(Shader shader)
+{
+    shader.use();
+    shader.setMat4("projection", projectionMatrix);
+    shader.setMat4("view", viewMatrix);
+    glBindTexture(GL_TEXTURE_CUBE_MAP,images[0].envCubemap);
+    glDepthFunc(GL_LEQUAL);
+    float vertices[] = {
+        // 位置              // 纹理坐标
+        -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+        0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
+        0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+        0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+        -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+
+        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+        0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+        0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+        0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+        -0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
+        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+
+        -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+        -0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+        -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+        0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+        0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+        0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+        0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+        0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+        0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+        0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
+        0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+        0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+
+        -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+        0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+        0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+        0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+        -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
+        -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
+    };
+
+    // 创建顶点缓冲对象（VBO）和顶点数组对象（VAO）
+    unsigned int VBO, VAO;
+    glGenVertexArrays(1, &VAO);
+    glGenBuffers(1, &VBO);
+
+    // 绑定VAO和VBO
+    glBindVertexArray(VAO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+
+    // 将顶点数据复制到VBO中
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+    // 设置顶点属性指针
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    // 解绑VBO和VAO
+    glBindBuffer(GL_ARRAY_BUFFER, 0); 
+    glBindVertexArray(0); 
+
+    // 在渲染循环中绘制立方体
+    glBindVertexArray(VAO);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+
+}
 
 void CScene::drawModel(Shader shader,glm::mat4 modelMatrix,glm::mat4 viewMatrix,glm::mat4 projectionMatrix)
 {   
@@ -103,17 +187,48 @@ void CScene::drawModel(Shader shader,glm::mat4 modelMatrix,glm::mat4 viewMatrix,
     shader.setMat3("uModelToWorldNormalMatrix", uModelToWorldNormalMatrix);
     glm::mat4 LightSpaceMatrix = projectionMatrix_SM * viewMatrix_SM;
     shader.setMat4("uLightSpaceMatrix",  LightSpaceMatrix );
+    shader.setVec3("uLightColor", lights[0].color);
+    
+
     
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D,shadowSetting.depthMap); // 绑定shadowmap
     shader.setInt("uShadowMap", 0);
+    
+    glActiveTexture(GL_TEXTURE1);
+
+    glBindTexture(GL_TEXTURE_CUBE_MAP,images[0].irradianceMap);
+
+    shader.setInt("irradianceMap",1);
+
+    glActiveTexture(GL_TEXTURE2);
+
+    glBindTexture(GL_TEXTURE_CUBE_MAP,images[0].prefilterMap);
+
+    shader.setInt("prefilterMap",2);
+
+    glActiveTexture(GL_TEXTURE3);
+
+    glBindTexture(GL_TEXTURE_2D,images[0].brdfLUTTexture);
+
+    shader.setInt("brdfLUTTexture",3);
+
+    glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 
 
-    for(unsigned int i = 0; i < models.size(); i++)
+
+
+
+    for(unsigned int i = 1; i < models.size(); i++)
     {
 
         models[i].DrawModel(shader);
     }
+
+    shader.setMat4("uModelMatrix", glm::mat4(1.0f));
+
+    models[0].DrawModel(shader);
+
 
 }
 
@@ -140,7 +255,6 @@ void CScene::drawModel_SM(Shader shader, glm::mat4 modelMatrix, glm::mat4 viewMa
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     glViewport(0, 0, Width, Height);
-
 
 
 }

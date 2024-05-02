@@ -81,5 +81,5 @@
         "variant": "cpp"
     },
     "C_Cpp.dimInactiveRegions": false,
-    "C_Cpp.errorSquiggles": "enabledIfIncludesResolve"
+    "C_Cpp.errorSquiggles": "enabled",
 }

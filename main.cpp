@@ -6,6 +6,10 @@
 #include "objects/CScene.h"
 #include "camera/Camera.h"
 #include "objects/CLight.h"
+#include "renderdoc/renderdoc_app.h"
+#include <minwindef.h>
+#include <libloaderapi.h>
+
 
 using namespace std;
 
@@ -23,6 +27,7 @@ int isCameraRotate = 0;
 float lastX = WIDTH / 2.0f;
 float lastY = HEIGHT / 2.0f;
 bool firstMouse = true;
+
 
 
 int main() {
@@ -59,14 +64,19 @@ int main() {
     Shader ourShader("src/shaders/phongshaders/vertex.glsl", "src/shaders/phongshaders/fragment.glsl");
     Shader depthShader("src/shaders/shadowmapshaders/vertex.glsl", "src/shaders/shadowmapshaders/fragment.glsl");
     Shader screenShader("src/shaders/screenShaders/vertex.glsl", "src/shaders/screenShaders/fragment.glsl");
+    Shader cubemaprenderShader("src/shaders/cubemaprendershaders/vertex.glsl", "src/shaders/cubemaprendershaders/fragment.glsl");
+    Shader cubemapShaer("src/shaders/cubemapshaders/vertex.glsl","src/shaders/cubemapshaders/fragment.glsl");
+    Shader irradianceShader("src/shaders/irradiancemap/vertex.glsl","src/shaders/irradiancemap/fragment.glsl");
+    Shader prefilterShader("src/shaders/prefiltermap/vertex.glsl","src/shaders/prefiltermap/fragment.glsl");
+    Shader brdfShader("src/shaders/BRDFLUT/vertex.glsl","src/shaders/BRDFLUT/fragment.glsl");
    
     //初始化场景
     CScene scene(WIDTH,HEIGHT);
 
     //初始化相机
-    glm::vec3 camera_Pos(3.0f, 10.0f, 8.0f);
+    glm::vec3 camera_Pos(3.0f, 5.0f, 8.0f);
     glm::vec3 camera_UpVector(0.0, 1.0, 0.0);
-    glm::vec3 camera_cameraTarget(0.0, 2.0f, 0.0);
+    glm::vec3 camera_cameraTarget(-3.0, 2.0f, 0.0);
     CCamera Ccamera(camera_Pos, camera_UpVector,camera_cameraTarget);
 
     //导入model
@@ -88,7 +98,9 @@ int main() {
     ShadowSetting shadowSetting;
     shadowSetting.setShadowMapSize(ShadowSetting::SHADOWMAPSIZE_1024);
 
-    
+    //Cubemap初始化
+    CImage cubemap;
+    cubemap.load_HdrImage("assets/HDR/hdir/autoshop_01_4k.hdr");
     
     //scene初始化
     scene.setModelMatrix(glm::mat4(1.0f));
@@ -106,11 +118,15 @@ int main() {
 
 
 
-    
-    scene.AddModel(model_mary);
     scene.AddModel(model_plane);
+    scene.AddModel(model_mary);
+    
     scene.AddCamera(Ccamera);
     scene.AddLight(light);
+    scene.SetImage(cubemap);
+
+
+    scene.images[0].renderCubeMap(cubemaprenderShader,irradianceShader,prefilterShader,brdfShader);
 
     glEnable(GL_DEPTH_TEST);
 
@@ -128,7 +144,7 @@ int main() {
         scene.setModelToWorldNormalMatrix(scene.modelMatrix);
 
 
-        scene.drawScene(ourShader,depthShader);
+        scene.drawScene(ourShader,depthShader,cubemapShaer);
 
 
         glfwSwapBuffers(window);
@@ -176,23 +192,12 @@ void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
 
     }
 
-
-
-
 }
 
 void processInput(GLFWwindow *window)
 {
-
-
-
-
-
     if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
             isCameraRotate = 1;
     if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_RELEASE)
             isCameraRotate = 0;
- 
-
-
 }
