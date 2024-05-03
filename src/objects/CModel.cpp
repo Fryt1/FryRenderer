@@ -85,8 +85,18 @@ CMesh CModel::processMesh(aiMesh *mesh, const aiScene *scene)
         }
         else
             vertex.TexCoords = glm::vec2(0.0f, 0.0f);
+        // 处理切线
+        if(mesh->mTangents) // 网格是否有切线？
+        {
+            vector.x = mesh->mTangents[i].x;
+            vector.y = mesh->mTangents[i].y;
+            vector.z = mesh->mTangents[i].z;
+            vertex.Tangent = vector;
+        }
+        else
+            vertex.Tangent = glm::vec3(0.0f, 0.0f, 0.0f);
         vertices.push_back(vertex);
-    }
+        }
     // 处理索引
     for(unsigned int i = 0; i < mesh->mNumFaces; i++)
     {
@@ -98,12 +108,33 @@ CMesh CModel::processMesh(aiMesh *mesh, const aiScene *scene)
     if(mesh->mMaterialIndex >= 0)
     {
         aiMaterial *material = scene->mMaterials[mesh->mMaterialIndex];
+
+        // 加载漫反射贴图（Base Color）
         std::vector<Texture> diffuseMaps = loadMaterialTextures(material, 
                                             aiTextureType_DIFFUSE, "texture_diffuse");
         textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
-        std::vector<Texture> specularMaps = loadMaterialTextures(material, 
-                                            aiTextureType_SPECULAR, "texture_specular");
-        textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
+
+        // 加载法线贴图（Normal）
+        std::vector<Texture> normalMaps = loadMaterialTextures(material, 
+                                            aiTextureType_NORMALS, "texture_normal");
+        textures.insert(textures.end(), normalMaps.begin(), normalMaps.end());
+
+        // 加载自发光贴图（Emissive）
+        std::vector<Texture> emissiveMaps = loadMaterialTextures(material, 
+                                            aiTextureType_EMISSIVE, "texture_emissive");
+        textures.insert(textures.end(), emissiveMaps.begin(), emissiveMaps.end());
+
+        // 加载粗糙度贴图（Roughness）
+        std::vector<Texture> roughnessMaps = loadMaterialTextures(material, 
+                                            aiTextureType_SHININESS, "texture_roughness");
+        textures.insert(textures.end(), roughnessMaps.begin(), roughnessMaps.end());
+
+        // 加载金属度贴图（Metallic）
+        std::vector<Texture> metallicMaps = loadMaterialTextures(material, 
+                                            aiTextureType_METALNESS, "texture_metallic");
+        
+
+        textures.insert(textures.end(), metallicMaps.begin(), metallicMaps.end());
     }
 
     return CMesh(vertices, indices, textures);

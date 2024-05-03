@@ -20,7 +20,7 @@ void CScene::AddModel(CModel model)
     models.push_back(model);
 }
 
-void CScene::AddCamera(CCamera camera)
+void CScene::AddCamera(CCamera* camera)
 {
     cameras.push_back(camera);
 }
@@ -79,7 +79,7 @@ void CScene::setProjectionMatrix_SM(glm::mat4 projectionMatrix)
 //设置相机位置
 void CScene::setCameraPos(Shader _Modelshader)
 {
-    _Modelshader.setVec3("uCameraPos", cameras[0].Position);
+    _Modelshader.setVec3("uCameraPos", cameras[0]->Position);
 }
 //设置光源
 void CScene::setupLight(Shader _Modelshader)

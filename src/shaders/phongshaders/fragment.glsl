@@ -3,6 +3,12 @@
 precision mediump float;
 #endif
 uniform sampler2D texture_diffuse1;
+uniform sampler2D texture_specular1;
+uniform sampler2D texture_normal1;
+uniform sampler2D texture_height1;
+uniform sampler2D texture_metallic1;
+uniform sampler2D texture_roughness1;
+uniform sampler2D texture_emission1;
 uniform sampler2D uShadowMap;
 
 uniform bool useTexture;
@@ -20,9 +26,12 @@ uniform samplerCube prefilterMap;
 
 uniform sampler2D brdfLUTTexture;
 
+
+
 in highp vec2 vTextureCoord;
 in highp vec3 vFragPos_WS;
 in highp vec3 vNormal_WS;
+in highp vec3 vTangent_WS;
 
 out vec4 FragColor;
 
@@ -112,9 +121,9 @@ vec3 fresnelSchlick(float cosTheta, vec3 F0)
     return F0 + (1.0 - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }
 
-vec3 fresnelSchlickRoughness(float cosTheta, vec3 F0, float roughness)
+vec3 fresnelSchlickRoughness(float cosTheta, vec3 F0, float roughness,vec3 F90)
 {
-    return F0 + (max(vec3(1.0 - roughness), F0) - F0) * pow(1.0 - cosTheta, 5.0);
+    return F0 + (max(vec3(1.0 - roughness)*F90, F0) - F0) * pow(1.0 - cosTheta, 5.0);
 }   
 
 
@@ -164,10 +173,16 @@ vec3 color;
       color = vec3(0.7);
   }
   
-  float metallic = 0.5; // 你需要根据你的需求来设置这个值
-  float roughness = 0.5; // 你需要根据你的需求来设置这个值
+  float metallic = texture2D(texture_metallic1,vTextureCoord).r; // 你需要根据你的需求来设置这个值
+  float roughness = texture2D(texture_roughness1,vTextureCoord).r; // 你需要根据你的需求来设置这个值
   vec3 lightDir = -normalize(uLightdirection);
-  vec3 normal = normalize(vNormal_WS);
+  vec3 normalTexture = texture(texture_normal1, vTextureCoord).rgb;
+  normalTexture = normalTexture * 2.0 - 1.0; // 将法线贴图的颜色从[0,1]转换到[-1,1]
+  vec3 T = normalize(vTangent_WS);
+  vec3 N = normalize(vNormal_WS);
+  vec3 B = cross(N, T);
+  mat3 TBN = mat3(T, B, N); // 切线空间到世界空间的变换矩阵
+  vec3 normal = normalize(TBN * normalTexture); // 将法线从切线空间转换到世界空间
   float shadow = CalcShadowFactor(vFragPos_WS, normal, lightDir);//计算阴影
   vec3 viewDir = normalize(uCameraPos - vFragPos_WS);
   vec3 halfwayDir = normalize(lightDir + viewDir);
@@ -179,18 +194,19 @@ vec3 color;
   //光照项
   vec3 R = reflect(-viewDir, normal); 
   const float MAX_REFLECTION_LOD = 4.0;
+  
   vec3 prefilteredColor = textureLod(prefilterMap, R,  roughness * MAX_REFLECTION_LOD).rgb;  
   
   vec3 irradiance  = texture(irradianceMap, normal).rgb;
 
   //计算镜面反射brdf项
   vec3 F0 = vec3(0.04);
-  vec3 F        = fresnelSchlickRoughness(max(dot(normal, viewDir), 0.0), F0, roughness);
+  vec3 F        = fresnelSchlickRoughness(max(dot(normal, viewDir), 0.0), F0, roughness,color);
   vec2 envBRDF  = texture(brdfLUTTexture, vec2(max(dot(normal, viewDir), 0.0), roughness)).rg;
   vec3 specular = prefilteredColor * (F * envBRDF.x + envBRDF.y);
 
   //计算漫反射brdf项
-  vec3 kS = fresnelSchlickRoughness(max(dot(normal, viewDir), 0.0), F0, roughness); 
+  vec3 kS = F; 
   vec3 kD = vec3(1.0) - kS;
   kD *= 1.0 - metallic;  
 

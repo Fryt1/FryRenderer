@@ -18,6 +18,21 @@ float RadicalInverse_VdC(uint bits)
     return float(bits) * 2.3283064365386963e-10; // / 0x100000000
 }
 // ----------------------------------------------------------------------------
+
+float DistributionGGX(vec3 N, vec3 H, float roughness)
+{
+    float a      = roughness*roughness;
+    float a2     = a*a;
+    float NdotH  = max(dot(N, H), 0.0);
+    float NdotH2 = NdotH*NdotH;
+
+    float num   = a2;
+    float denom = (NdotH2 * (a2 - 1.0) + 1.0);
+    denom = PI * denom * denom;
+
+    return num / denom;
+}
+
 vec2 Hammersley(uint i, uint N)
 {
     return vec2(float(i)/float(N), RadicalInverse_VdC(i));
@@ -64,11 +79,20 @@ void main()
         float NdotL = max(dot(N, L), 0.0);
         if(NdotL > 0.0)
         {
-            prefilteredColor += texture(environmentMap, L).rgb * NdotL;
+            float D   = DistributionGGX(N,H, roughness);
+            float pdf = (D * dot(N, H) / (4.0 * dot(H, V))) + 0.0001; 
+
+            float resolution = 512.0; // resolution of source cubemap (per face)
+            float saTexel  = 4.0 * PI / (6.0 * resolution * resolution);
+            float saSample = 1.0 / (float(SAMPLE_COUNT) * pdf + 0.0001);
+
+            float mipLevel = roughness == 0.0 ? 0.0 : 0.5 * log2(saSample / saTexel); 
+
+            prefilteredColor += textureLod(environmentMap, L, mipLevel).rgb * vec3(NdotL);
             totalWeight      += NdotL;
         }
     }
     prefilteredColor = prefilteredColor / totalWeight;
 
     FragColor = vec4(prefilteredColor, 1.0);
-}  
+}

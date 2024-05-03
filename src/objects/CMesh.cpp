@@ -19,25 +19,35 @@ void CMesh::Draw(Shader shader)
 {
     unsigned int diffuseNr = 1;
     unsigned int specularNr = 1;
+    unsigned int normalNr = 1;
+    unsigned int emissiveNr = 1;
+    unsigned int roughnessNr = 1;
+    unsigned int metallicNr = 1;
     bool hasTexture = textures.size() > 0;
     shader.setBool("useTexture", hasTexture);
-    if (hasTexture) {
-        for(unsigned int i = 0; i < textures.size(); i++)
-        {
-            glActiveTexture(GL_TEXTURE0 + i+4); // 在绑定之前激活相应的纹理单元
-            // 获取纹理序号（diffuse_textureN 中的 N）
-            std::string number;
-            std::string name = textures[i].type;
-            if(name == "texture_diffuse")
-                number = std::to_string(diffuseNr++);
-            else if(name == "texture_specular")
-                number = std::to_string(specularNr++);
+    for(unsigned int i = 0; i < textures.size(); i++)
+    {
+        glActiveTexture(GL_TEXTURE0 + i+4); // 在绑定之前激活相应的纹理单元
+        // 获取纹理序号（diffuse_textureN 中的 N）
+        std::string number;
+        std::string name = textures[i].type;
+        if(name == "texture_diffuse")
+            number = std::to_string(diffuseNr++);
+        else if(name == "texture_specular")
+            number = std::to_string(specularNr++);
+        else if(name == "texture_normal")
+            number = std::to_string(normalNr++);
+        else if(name == "texture_emissive")
+            number = std::to_string(emissiveNr++);
+        else if(name == "texture_roughness")
+            number = std::to_string(roughnessNr++);
+        else if(name == "texture_metallic")
+            number = std::to_string(metallicNr++);
 
-            shader.setInt((name + number).c_str(), i+4);
-            glBindTexture(GL_TEXTURE_2D, textures[i].id);
-        }
-        glActiveTexture(GL_TEXTURE0);
-    } 
+        shader.setInt((name + number).c_str(), i+4);
+        glBindTexture(GL_TEXTURE_2D, textures[i].id);
+    }
+    glActiveTexture(GL_TEXTURE0);
 
     // 绘制网格
     glBindVertexArray(VAO);
@@ -76,6 +86,10 @@ void CMesh::setupMesh()
     // 顶点纹理坐标
     glEnableVertexAttribArray(2);   
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, TexCoords));
+    //顶点切线
+    glEnableVertexAttribArray(3);
+    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Tangent));
+
 
     glBindVertexArray(0);
 }

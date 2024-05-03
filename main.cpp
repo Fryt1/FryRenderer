@@ -19,6 +19,7 @@ int HEIGHT = 960;
 void processInput(GLFWwindow *window);
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xposIn, double yposIn);
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 
 float xoffset = 0;
 float yoffset = 0;
@@ -27,6 +28,9 @@ int isCameraRotate = 0;
 float lastX = WIDTH / 2.0f;
 float lastY = HEIGHT / 2.0f;
 bool firstMouse = true;
+
+double globalYOffset = 0.0;
+
 
 
 
@@ -48,6 +52,7 @@ int main() {
     glfwMakeContextCurrent(window);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
     glfwSetCursorPosCallback(window, mouse_callback);
+    glfwSetScrollCallback(window, scroll_callback);
 
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
         std::cout << "Failed to initialize GLAD" << std::endl;
@@ -55,11 +60,6 @@ int main() {
     }
 
     glViewport(0, 0, WIDTH, HEIGHT);
-
-
-
-
-
 
     Shader ourShader("src/shaders/phongshaders/vertex.glsl", "src/shaders/phongshaders/fragment.glsl");
     Shader depthShader("src/shaders/shadowmapshaders/vertex.glsl", "src/shaders/shadowmapshaders/fragment.glsl");
@@ -74,9 +74,9 @@ int main() {
     CScene scene(WIDTH,HEIGHT);
 
     //初始化相机
-    glm::vec3 camera_Pos(3.0f, 5.0f, 8.0f);
+    glm::vec3 camera_Pos(0.0f, 0.0f, 300.0f);
     glm::vec3 camera_UpVector(0.0, 1.0, 0.0);
-    glm::vec3 camera_cameraTarget(-3.0, 2.0f, 0.0);
+    glm::vec3 camera_cameraTarget(0.0f, 0.0f, 0.0);
     CCamera Ccamera(camera_Pos, camera_UpVector,camera_cameraTarget);
 
     //导入model
@@ -85,6 +85,9 @@ int main() {
 
     std::string planePath = "assets/plane/plane.obj";
     CModel model_plane(planePath);
+
+    std::string gunPath = "assets/ganyu.fbx";
+    CModel gun(gunPath);
 
     //初始化光源
     glm::vec3 light_Dir(-4.0f, -2.0f, 1.0f);
@@ -100,18 +103,19 @@ int main() {
 
     //Cubemap初始化
     CImage cubemap;
-    cubemap.load_HdrImage("assets/HDR/hdir/autoshop_01_4k.hdr");
+    cubemap.load_HdrImage("assets/HDR/hdir/aircraft_workshop_01_4k.hdr");
     
     //scene初始化
-    scene.setModelMatrix(glm::mat4(1.0f));
+    glm::mat4 scaleMatrix = glm::scale(glm::mat4(1.0f), glm::vec3(0.01f));
+    scene.setModelMatrix(scaleMatrix);
 
-    scene.setProjectionMatrix(Ccamera.GetProgectionMatrix(glm::radians(45.0f), (float)WIDTH / (float)HEIGHT, 0.1f, 100.0f));
+    scene.setProjectionMatrix(Ccamera.GetProgectionMatrix(glm::radians(45.0f), (float)WIDTH / (float)HEIGHT, 0.1f, 350.0f));
 
 
 
-    scene.setModelMatrix_SM(glm::mat4(1.0f));
+    scene.setModelMatrix_SM(scaleMatrix);
     scene.setViewMatrix_SM(light.getlightviewMatrix());
-    scene.setProjectionMatrix_SM(glm::ortho(-5.0f, 5.0f, -5.0f, 5.0f, 1.0f, 25.0f));
+    scene.setProjectionMatrix_SM(glm::ortho(-5.0f, 5.0f, -5.0f, 5.0f, 1.0f, 350.0f));
 
     scene.SetShadowSetting(shadowSetting);
     scene.shadowSetting.CreateShadowMapFB();
@@ -119,9 +123,10 @@ int main() {
 
 
     scene.AddModel(model_plane);
-    scene.AddModel(model_mary);
+    //scene.AddModel(model_mary);
+    scene.AddModel(gun);
     
-    scene.AddCamera(Ccamera);
+    scene.AddCamera((&Ccamera));
     scene.AddLight(light);
     scene.SetImage(cubemap);
 
@@ -135,11 +140,22 @@ int main() {
 
         scene.updateWindowSize(WIDTH,HEIGHT);
 
+        scene.cameras[0]->Position = camera_Pos + glm::vec3(0.0f,0.0f,globalYOffset);
+
+
         scene.setViewMatrix(Ccamera.GetViewMatrix());
+
+        
+
         glm::mat4 rotationMatrix = glm::rotate(glm::mat4(1.0f),xoffset_last , glm::vec3(0.0f, 1.0f, 0.0f));
 
-        scene.setModelMatrix(rotationMatrix * glm::mat4(1.0f));
-        scene.setModelMatrix_SM(rotationMatrix * glm::mat4(1.0f));
+
+        glm::mat4 scaleMatrix = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f));
+
+
+        
+        scene.setModelMatrix(rotationMatrix * scaleMatrix);
+        scene.setModelMatrix_SM(rotationMatrix * scaleMatrix);
 
         scene.setModelToWorldNormalMatrix(scene.modelMatrix);
 
@@ -200,4 +216,8 @@ void processInput(GLFWwindow *window)
             isCameraRotate = 1;
     if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_RELEASE)
             isCameraRotate = 0;
+}
+
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
+    globalYOffset -=yoffset*5.0f;
 }

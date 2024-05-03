@@ -25,7 +25,7 @@ glm::mat4 CLight::getlightviewMatrix()
 
 void CLight::SetLightPos()
 {
-    distance =  3.0f;
+    distance =  20.0f;
     sceneCenter  = glm::vec3(0.0f,0.0f,0.0f);
     lightPos= sceneCenter - direction * distance;
 }

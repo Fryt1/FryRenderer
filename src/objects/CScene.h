@@ -14,7 +14,7 @@ class CScene{
 
 public:
     std::vector<CModel> models;
-    std::vector<CCamera> cameras;
+    std::vector<CCamera*> cameras;
     std::vector<CLight> lights;
     std::vector<CImage> images;
 
@@ -45,7 +45,7 @@ public:
 
 
     void AddModel(CModel model);
-    void AddCamera(CCamera camera);
+    void AddCamera(CCamera *camera);
     void AddLight(CLight light);
 
 

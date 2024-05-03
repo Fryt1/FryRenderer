@@ -307,6 +307,9 @@ class CImage
             prefilterShader.setMat4("projection", captureProjection);
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_CUBE_MAP, envCubemap);
+            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR); 
+            glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+
 
             glBindFramebuffer(GL_FRAMEBUFFER, captureFBO);
             unsigned int maxMipLevels = 5;
