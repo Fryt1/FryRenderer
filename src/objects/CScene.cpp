@@ -89,7 +89,7 @@ void CScene::setupLight(Shader _Modelshader)
 
 }
 
-void CScene::drawScene(Shader _Modelshader,Shader _Modelshader_SM,Shader _CubeMapshader)
+void CScene::IBLdrawScene(Shader _Modelshader,Shader _Modelshader_SM,Shader _CubeMapshader)
 {
     drawCubeMap(_CubeMapshader);
 
@@ -219,15 +219,13 @@ void CScene::drawModel(Shader shader,glm::mat4 modelMatrix,glm::mat4 viewMatrix,
 
 
 
-    for(unsigned int i = 1; i < models.size(); i++)
+    for(unsigned int i = 0; i < models.size(); i++)
     {
 
         models[i].DrawModel(shader);
     }
 
-    shader.setMat4("uModelMatrix", glm::mat4(1.0f));
 
-    models[0].DrawModel(shader);
 
 
 }

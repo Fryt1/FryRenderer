@@ -10,6 +10,8 @@ public:
     glm::vec3 upVector;
     glm::vec3 camesraTarget;
 
+    CCamera() = default;
+
     //初始化相机，设置位置，上方向，目标位置
     CCamera(glm::vec3 _position, glm::vec3 _upVector, glm::vec3 _cameraTarget)
     {

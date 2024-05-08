@@ -9,6 +9,8 @@
 #include "renderdoc/renderdoc_app.h"
 #include <minwindef.h>
 #include <libloaderapi.h>
+#include <gl/RenderStrategy.h>
+#include <map>
 
 
 using namespace std;
@@ -16,208 +18,97 @@ using namespace std;
 int WIDTH =1240;
 int HEIGHT = 960;
 
-void processInput(GLFWwindow *window);
-void framebuffer_size_callback(GLFWwindow* window, int width, int height);
-void mouse_callback(GLFWwindow* window, double xposIn, double yposIn);
-void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
-
-float xoffset = 0;
-float yoffset = 0;
-float xoffset_last = 0;
-int isCameraRotate = 0;
-float lastX = WIDTH / 2.0f;
-float lastY = HEIGHT / 2.0f;
-bool firstMouse = true;
-
-double globalYOffset = 0.0;
-
-
-
+// 声明函数
+void initShaderPathes(std::map<std::string,std::string>& ShaderPaths);
+void initModelPathes(std::vector<std::string>& modelPaths);
+void initScene(std::vector<std::string>& modelPaths, std::map<std::string,std::string>& ShaderPaths,CScene& scene, CCamera& camera, CLight& light, ShadowSetting& shadowSetting, CImage& cubemap, bool initShadow = true, bool initCubemap = true);
 
 int main() {
-    glfwInit();
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-
-
-
-    GLFWwindow *window = glfwCreateWindow(WIDTH, HEIGHT, "LearnOpenGL", NULL, NULL);
-    if (window == NULL) {
-        cout << "Failed to create GLFW window" << endl;
-        glfwTerminate();
-        return -1;
-    }
-    glfwMakeContextCurrent(window);
-    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-    glfwSetCursorPosCallback(window, mouse_callback);
-    glfwSetScrollCallback(window, scroll_callback);
-
-    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
-        std::cout << "Failed to initialize GLAD" << std::endl;
+    IBLRenderStrategy renderStrategy(WIDTH,HEIGHT);
+    
+    if(renderStrategy.initOpenGl()==-1)
+    {
         return -1;
     }
 
-    glViewport(0, 0, WIDTH, HEIGHT);
-
-    Shader ourShader("src/shaders/phongshaders/vertex.glsl", "src/shaders/phongshaders/fragment.glsl");
-    Shader depthShader("src/shaders/shadowmapshaders/vertex.glsl", "src/shaders/shadowmapshaders/fragment.glsl");
-    Shader screenShader("src/shaders/screenShaders/vertex.glsl", "src/shaders/screenShaders/fragment.glsl");
-    Shader cubemaprenderShader("src/shaders/cubemaprendershaders/vertex.glsl", "src/shaders/cubemaprendershaders/fragment.glsl");
-    Shader cubemapShaer("src/shaders/cubemapshaders/vertex.glsl","src/shaders/cubemapshaders/fragment.glsl");
-    Shader irradianceShader("src/shaders/irradiancemap/vertex.glsl","src/shaders/irradiancemap/fragment.glsl");
-    Shader prefilterShader("src/shaders/prefiltermap/vertex.glsl","src/shaders/prefiltermap/fragment.glsl");
-    Shader brdfShader("src/shaders/BRDFLUT/vertex.glsl","src/shaders/BRDFLUT/fragment.glsl");
-   
-    //初始化场景
-    CScene scene(WIDTH,HEIGHT);
-
-    //初始化相机
-    glm::vec3 camera_Pos(0.0f, 0.0f, 300.0f);
-    glm::vec3 camera_UpVector(0.0, 1.0, 0.0);
-    glm::vec3 camera_cameraTarget(0.0f, 0.0f, 0.0);
-    CCamera Ccamera(camera_Pos, camera_UpVector,camera_cameraTarget);
-
-    //导入model
-    std::string marypath = "assets/mary/Marry.obj";
-    CModel model_mary(marypath);
-
-    std::string planePath = "assets/plane/plane.obj";
-    CModel model_plane(planePath);
-
-    std::string gunPath = "assets/ganyu.fbx";
-    CModel gun(gunPath);
-
-    //初始化光源
-    glm::vec3 light_Dir(-4.0f, -2.0f, 1.0f);
-    glm::vec3 light_Color(1.0f, 1.0f, 1.0f);
-    float light_instansity = 1.0f;
-    CLight light(light_Dir,light_instansity,light_Color);
-    light.setlightviewMatrix();
+    GLFWwindow *window = renderStrategy.Window;
 
 
-    //初始化阴影设置
+    //初始化shader路径
+    std::map<std::string,std::string> ShaderPaths;
+
+    std::vector<std::string> modelPaths;
+    CScene scene;
+    CCamera camera;
+    CLight light;
     ShadowSetting shadowSetting;
-    shadowSetting.setShadowMapSize(ShadowSetting::SHADOWMAPSIZE_1024);
-
-    //Cubemap初始化
     CImage cubemap;
-    cubemap.load_HdrImage("assets/HDR/hdir/aircraft_workshop_01_4k.hdr");
-    
     //scene初始化
-    glm::mat4 scaleMatrix = glm::scale(glm::mat4(1.0f), glm::vec3(0.01f));
-    scene.setModelMatrix(scaleMatrix);
-
-    scene.setProjectionMatrix(Ccamera.GetProgectionMatrix(glm::radians(45.0f), (float)WIDTH / (float)HEIGHT, 0.1f, 350.0f));
-
-
-
-    scene.setModelMatrix_SM(scaleMatrix);
-    scene.setViewMatrix_SM(light.getlightviewMatrix());
-    scene.setProjectionMatrix_SM(glm::ortho(-5.0f, 5.0f, -5.0f, 5.0f, 1.0f, 350.0f));
-
-    scene.SetShadowSetting(shadowSetting);
-    scene.shadowSetting.CreateShadowMapFB();
-
-
-
-    scene.AddModel(model_plane);
-    //scene.AddModel(model_mary);
-    scene.AddModel(gun);
+    initScene(modelPaths, ShaderPaths,scene, camera, light, shadowSetting, cubemap, true, true);
     
-    scene.AddCamera((&Ccamera));
-    scene.AddLight(light);
-    scene.SetImage(cubemap);
+    glm::mat4 scaleMatrix = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f));
 
 
-    scene.images[0].renderCubeMap(cubemaprenderShader,irradianceShader,prefilterShader,brdfShader);
-
-    glEnable(GL_DEPTH_TEST);
-
-    while (!glfwWindowShouldClose(window)) {
-        processInput(window);
-
-        scene.updateWindowSize(WIDTH,HEIGHT);
-
-        scene.cameras[0]->Position = camera_Pos + glm::vec3(0.0f,0.0f,globalYOffset);
-
-
-        scene.setViewMatrix(Ccamera.GetViewMatrix());
-
-        
-
-        glm::mat4 rotationMatrix = glm::rotate(glm::mat4(1.0f),xoffset_last , glm::vec3(0.0f, 1.0f, 0.0f));
-
-
-        glm::mat4 scaleMatrix = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f));
-
-
-        
-        scene.setModelMatrix(rotationMatrix * scaleMatrix);
-        scene.setModelMatrix_SM(rotationMatrix * scaleMatrix);
-
-        scene.setModelToWorldNormalMatrix(scene.modelMatrix);
-
-
-        scene.drawScene(ourShader,depthShader,cubemapShaer);
-
-
-        glfwSwapBuffers(window);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glfwPollEvents();
-    }
+    //配置渲染策略
+    renderStrategy.initRenderStrategy(&scene,&camera,light,modelPaths,scaleMatrix,shadowSetting,cubemap,ShaderPaths);
+    //渲染循环
+    renderStrategy.Draw(window,&camera,ShaderPaths);
 
     glfwTerminate();
     return 0;
 }
 
-void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
-    glViewport(0, 0, width, height);
-    WIDTH = width;
-    HEIGHT = height;
-}
+void initScene(std::vector<std::string>& modelPaths, std::map<std::string,std::string>& ShaderPaths,CScene& scene, CCamera& camera, CLight& light, ShadowSetting& shadowSetting, CImage& cubemap, bool initShadow , bool initCubemap ) {
+    // 初始化模型路径
+    initModelPathes(modelPaths);
 
-void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
-{
+    // 初始化shader路径
+    initShaderPathes(ShaderPaths);
 
-    float xpos = static_cast<float>(xposIn);
-    float ypos = static_cast<float>(yposIn);
+    // 初始化场景
+    scene = CScene(WIDTH, HEIGHT);
 
-    if (firstMouse)
-    {
-        lastX = xpos;
-        lastY = ypos;
-        firstMouse = false;
+    // 初始化相机
+    glm::vec3 camera_Pos(0.0f, 0.0f, 300.0f);
+    glm::vec3 camera_UpVector(0.0, 1.0, 0.0);
+    glm::vec3 camera_cameraTarget(0.0f, 0.0f, 0.0);
+    camera = CCamera(camera_Pos, camera_UpVector, camera_cameraTarget);
+
+    // 初始化光源
+    glm::vec3 light_Dir(-4.0f, -2.0f, 1.0f);
+    glm::vec3 light_Color(1.0f, 1.0f, 1.0f);
+    float light_instansity = 1.0f;
+    light = CLight(light_Dir, light_instansity, light_Color);
+
+    // 初始化阴影设置
+    if (initShadow) {
+        shadowSetting.setShadowMapSize(ShadowSetting::SHADOWMAPSIZE_1024);
     }
 
-
-    if(isCameraRotate ==1){
-
-        xoffset = xpos - lastX;
-        yoffset = lastY - ypos; // reversed since y-coordinates go from bottom to top
-
-        lastX = xpos;
-        lastY = ypos;
-
-        float sensitivity = 0.05f;
-        xoffset *= sensitivity;
-        yoffset *= sensitivity;
-
-        xoffset_last += xoffset;
-
+    // Cubemap初始化
+    if (initCubemap) {
+        cubemap.load_HdrImage("assets/HDR/hdir/aircraft_workshop_01_4k.hdr");
     }
-
 }
 
-void processInput(GLFWwindow *window)
-{
-    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
-            isCameraRotate = 1;
-    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_RELEASE)
-            isCameraRotate = 0;
+void initShaderPathes(std::map<std::string,std::string>& ShaderPaths){
+    ShaderPaths["cubemaprenderShader"] = "src/shaders/cubemaprendershaders/";
+    ShaderPaths["irradianceShader"] = "src/shaders/irradiancemap/";
+    ShaderPaths["prefilterShader"] = "src/shaders/prefiltermap/";
+    ShaderPaths["brdfShader"] = "src/shaders/BRDFLUT/";
+    ShaderPaths["ourShader"] = "src/shaders/phongshaders/";
+    ShaderPaths["depthShader"] = "src/shaders/shadowmapshaders/";
+    ShaderPaths["screenShader"] = "src/shaders/screenShaders/";
+    ShaderPaths["cubemapShader"] = "src/shaders/cubemapshaders/";
 }
 
-void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
-    globalYOffset -=yoffset*5.0f;
+void initModelPathes(std::vector<std::string>& modelPaths){
+    std::string mary = "assets/mary/Marry.obj";
+    std::string plane = "assets/plane/plane.obj";
+    std::string gun = "assets/ganyu.fbx";
+
+    //modelPaths.push_back(mary);
+    //modelPaths.push_back(plane);
+    modelPaths.push_back(gun);
 }

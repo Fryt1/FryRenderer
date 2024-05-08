@@ -22,6 +22,7 @@ public:
     glm::vec3 lightPos ;
 
     glm::mat4 lightviewMatrix;
+    CLight()=default;
     //构造函数,初始化光照方向,强度,颜色
     CLight(glm::vec3 _direction, float _instansity, glm::vec3 _color);
 

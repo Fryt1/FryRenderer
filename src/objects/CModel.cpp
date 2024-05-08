@@ -80,7 +80,7 @@ CMesh CModel::processMesh(aiMesh *mesh, const aiScene *scene)
         {
             glm::vec2 vec;
             vec.x = mesh->mTextureCoords[0][i].x; 
-            vec.y = mesh->mTextureCoords[0][i].y;
+            vec.y = 1 - mesh->mTextureCoords[0][i].y;
             vertex.TexCoords = vec;
         }
         else
@@ -173,12 +173,14 @@ std::vector<Texture> CModel::loadMaterialTextures(aiMaterial *mat, aiTextureType
 
 unsigned int CModel::TextureFromFile(const char *path, const std::string &directory, bool gamma)
 {
+
+
     std::string filename = std::string(path);
     filename = directory + '/' + filename;
 
     unsigned int textureID;
     glGenTextures(1, &textureID);
-
+    
     int width, height, nrComponents;
     unsigned char *data = stbi_load(filename.c_str(), &width, &height, &nrComponents, 0);
     if (data)

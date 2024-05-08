@@ -73,7 +73,7 @@ public:
     void drawCubeMap(Shader shader);
 
     
-    void drawScene(Shader _Modelshader,Shader _Modelshader_SM,Shader _CubeMapshader);
+    void IBLdrawScene(Shader _Modelshader,Shader _Modelshader_SM,Shader _CubeMapshader);
 
 
 };
