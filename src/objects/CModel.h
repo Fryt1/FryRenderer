@@ -18,7 +18,7 @@ class CModel
         {
             loadModel(path);
         }
-        void DrawModel(Shader shader);
+        void DrawModel(Shader shader,int texturenum);
 
         void DrawModel_SM(Shader shader);
 

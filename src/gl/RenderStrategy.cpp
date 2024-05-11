@@ -138,11 +138,11 @@ void IBLRenderStrategy::Draw(GLFWwindow *window,CCamera *Ccamera,std::map<std::s
 
         scene->setModelToWorldNormalMatrix(scene->modelMatrix);
 
-        Shader ourShader(ShaderPathes["ourShader"]+"vertex.glsl", ShaderPathes["ourShader"]+"fragment.glsl");
+        Shader Iblshader(ShaderPathes["Iblshader"]+"vertex.glsl", ShaderPathes["Iblshader"]+"fragment.glsl");
         Shader depthShader(ShaderPathes["depthShader"]+"vertex.glsl", ShaderPathes["depthShader"]+"fragment.glsl");
         Shader cubemapShaer(ShaderPathes["cubemapShader"]+"vertex.glsl",ShaderPathes["cubemapShader"]+"fragment.glsl");
 
-        scene->IBLdrawScene(ourShader,depthShader,cubemapShaer);
+        scene->IBLdrawScene(Iblshader,depthShader,cubemapShaer);
 
         glfwSwapBuffers(window);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -224,10 +224,5 @@ void IBLRenderStrategy::processInput_impl(GLFWwindow *window)
             isCameraRotate = 0;
 }
 
-void RenderStrategy::framebuffer_size_callback_impl(GLFWwindow *window, int width, int height)
-{
-    glViewport(0, 0, width, height);
-    WIDTH = width;
-    HEIGHT = height;
-}
+
 

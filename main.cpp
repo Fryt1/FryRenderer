@@ -10,6 +10,7 @@
 #include <minwindef.h>
 #include <libloaderapi.h>
 #include <gl/RenderStrategy.h>
+#include <gl/DeferredRendering.h>
 #include <map>
 
 
@@ -25,7 +26,7 @@ void initScene(std::vector<std::string>& modelPaths, std::map<std::string,std::s
 
 int main() {
 
-    IBLRenderStrategy renderStrategy(WIDTH,HEIGHT);
+    DeferredRendering renderStrategy(WIDTH,HEIGHT);
     
     if(renderStrategy.initOpenGl()==-1)
     {
@@ -35,15 +36,15 @@ int main() {
     GLFWwindow *window = renderStrategy.Window;
 
 
-    //初始化shader路径
+    //声明场景
     std::map<std::string,std::string> ShaderPaths;
-
     std::vector<std::string> modelPaths;
     CScene scene;
     CCamera camera;
     CLight light;
     ShadowSetting shadowSetting;
     CImage cubemap;
+    
     //scene初始化
     initScene(modelPaths, ShaderPaths,scene, camera, light, shadowSetting, cubemap, true, true);
     
@@ -70,13 +71,13 @@ void initScene(std::vector<std::string>& modelPaths, std::map<std::string,std::s
     scene = CScene(WIDTH, HEIGHT);
 
     // 初始化相机
-    glm::vec3 camera_Pos(0.0f, 0.0f, 300.0f);
+    glm::vec3 camera_Pos(0.0f, 0.0f, 50.0f);
     glm::vec3 camera_UpVector(0.0, 1.0, 0.0);
     glm::vec3 camera_cameraTarget(0.0f, 0.0f, 0.0);
     camera = CCamera(camera_Pos, camera_UpVector, camera_cameraTarget);
 
     // 初始化光源
-    glm::vec3 light_Dir(-4.0f, -2.0f, 1.0f);
+    glm::vec3 light_Dir(0.0f, 0.0f, -1.0f);
     glm::vec3 light_Color(1.0f, 1.0f, 1.0f);
     float light_instansity = 1.0f;
     light = CLight(light_Dir, light_instansity, light_Color);
@@ -97,10 +98,12 @@ void initShaderPathes(std::map<std::string,std::string>& ShaderPaths){
     ShaderPaths["irradianceShader"] = "src/shaders/irradiancemap/";
     ShaderPaths["prefilterShader"] = "src/shaders/prefiltermap/";
     ShaderPaths["brdfShader"] = "src/shaders/BRDFLUT/";
-    ShaderPaths["ourShader"] = "src/shaders/phongshaders/";
+    ShaderPaths["Iblshader"] = "src/shaders/Iblshaders/";
     ShaderPaths["depthShader"] = "src/shaders/shadowmapshaders/";
     ShaderPaths["screenShader"] = "src/shaders/screenShaders/";
     ShaderPaths["cubemapShader"] = "src/shaders/cubemapshaders/";
+    ShaderPaths["gbuffershader"] = "src/shaders/gbuffershaders/";
+    ShaderPaths["lightingPassShader"] = "src/shaders/lightingPassShaders/";
 }
 
 void initModelPathes(std::vector<std::string>& modelPaths){

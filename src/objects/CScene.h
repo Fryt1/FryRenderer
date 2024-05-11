@@ -76,6 +76,14 @@ public:
     void IBLdrawScene(Shader _Modelshader,Shader _Modelshader_SM,Shader _CubeMapshader);
 
 
+    void DeferredDrawModel(Shader shader);
+    void LightingDrawModel(GLuint Albedo_Flages, GLuint Specular_Occlusion,GLuint Normal_Smoothness,GLuint rboDepth,Shader shader);
+
+    void SetupScreenQuadVAO(unsigned int& quadVAO);
+
+
+
+
 };
 
 #endif

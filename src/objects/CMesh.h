@@ -36,7 +36,7 @@ class CMesh {
         std::vector<Texture> textures;
         /*  函数  */
         CMesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<Texture> textures);
-        void Draw(Shader shader);
+        void Draw(Shader shader ,int texturenum);
         void Draw_SM(Shader shader);
     private:
         /*  渲染数据  */

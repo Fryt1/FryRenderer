@@ -15,7 +15,7 @@ CMesh::CMesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, st
 
 
 
-void CMesh::Draw(Shader shader)
+void CMesh::Draw(Shader shader,int texturenum)
 {
     unsigned int diffuseNr = 1;
     unsigned int specularNr = 1;
@@ -27,7 +27,7 @@ void CMesh::Draw(Shader shader)
     shader.setBool("useTexture", hasTexture);
     for(unsigned int i = 0; i < textures.size(); i++)
     {
-        glActiveTexture(GL_TEXTURE0 + i+4); // 在绑定之前激活相应的纹理单元
+        glActiveTexture(GL_TEXTURE0 + i + texturenum); // 在绑定之前激活相应的纹理单元
         // 获取纹理序号（diffuse_textureN 中的 N）
         std::string number;
         std::string name = textures[i].type;
@@ -44,7 +44,7 @@ void CMesh::Draw(Shader shader)
         else if(name == "texture_metallic")
             number = std::to_string(metallicNr++);
 
-        shader.setInt((name + number).c_str(), i+4);
+        shader.setInt((name + number).c_str(), i+ texturenum);
         glBindTexture(GL_TEXTURE_2D, textures[i].id);
     }
     glActiveTexture(GL_TEXTURE0);

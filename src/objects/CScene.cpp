@@ -98,6 +98,8 @@ void CScene::IBLdrawScene(Shader _Modelshader,Shader _Modelshader_SM,Shader _Cub
     drawModel(_Modelshader,modelMatrix,viewMatrix,projectionMatrix);
 }
 
+
+
 void CScene::drawCubeMap(Shader shader)
 {
     shader.use();
@@ -189,29 +191,33 @@ void CScene::drawModel(Shader shader,glm::mat4 modelMatrix,glm::mat4 viewMatrix,
     shader.setMat4("uLightSpaceMatrix",  LightSpaceMatrix );
     shader.setVec3("uLightColor", lights[0].color);
     
-
+    int texturenum =0;
     
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D,shadowSetting.depthMap); // 绑定shadowmap
     shader.setInt("uShadowMap", 0);
+    texturenum++;
     
     glActiveTexture(GL_TEXTURE1);
 
     glBindTexture(GL_TEXTURE_CUBE_MAP,images[0].irradianceMap);
 
     shader.setInt("irradianceMap",1);
+    texturenum++;
 
     glActiveTexture(GL_TEXTURE2);
 
     glBindTexture(GL_TEXTURE_CUBE_MAP,images[0].prefilterMap);
 
     shader.setInt("prefilterMap",2);
+    texturenum++;
 
     glActiveTexture(GL_TEXTURE3);
 
     glBindTexture(GL_TEXTURE_2D,images[0].brdfLUTTexture);
 
     shader.setInt("brdfLUTTexture",3);
+    texturenum++;
 
     glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 
@@ -222,7 +228,7 @@ void CScene::drawModel(Shader shader,glm::mat4 modelMatrix,glm::mat4 viewMatrix,
     for(unsigned int i = 0; i < models.size(); i++)
     {
 
-        models[i].DrawModel(shader);
+        models[i].DrawModel(shader,texturenum);
     }
 
 
@@ -255,4 +261,104 @@ void CScene::drawModel_SM(Shader shader, glm::mat4 modelMatrix, glm::mat4 viewMa
     glViewport(0, 0, Width, Height);
 
 
+}
+
+
+
+void CScene::DeferredDrawModel(Shader shader)
+{
+    shader.use();
+
+    int texturenum =0;
+
+    shader.setMat4("uModelMatrix", modelMatrix);
+    shader.setMat4("uViewMatrix", viewMatrix);
+    shader.setMat4("uProjectionMatrix", projectionMatrix);
+    shader.setMat3("uModelToWorldNormalMatrix", uModelToWorldNormalMatrix);
+    
+
+
+
+    for (unsigned int i = 0; i < models.size(); i++)
+    {
+
+        models[i].DrawModel(shader,texturenum);
+    }
+}
+
+void CScene::LightingDrawModel(GLuint Albedo_Flages, GLuint Specular_Occlusion,GLuint Normal_Smoothness,GLuint rboDepth,Shader shader)
+{
+    shader.use();
+
+    int texturenum =0;
+    unsigned int quadVAO ;
+    SetupScreenQuadVAO(quadVAO);
+
+    // 1. 准备G缓冲纹理
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, shadowSetting.depthMap);
+    shader.setInt("uShadowMap", 0);
+
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, Albedo_Flages);
+    shader.setInt("Albedo_Flages", 1);
+    
+
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, Specular_Occlusion);
+    shader.setInt("Specular_Occlusion", 2);
+
+    glActiveTexture(GL_TEXTURE3);
+    glBindTexture(GL_TEXTURE_2D, Normal_Smoothness);
+    shader.setInt("Normal_Smoothness", 3);
+
+    glActiveTexture(GL_TEXTURE4);
+    glBindTexture(GL_TEXTURE_2D, rboDepth);
+    shader.setInt("rboDepth", 4);
+
+
+    //设置光源
+    setupLight(shader);
+    //设置相机位置
+    setCameraPos(shader);
+    //设置光照空间矩阵
+    glm::mat4 LightSpaceMatrix = projectionMatrix_SM * viewMatrix_SM;
+    shader.setMat4("uLightSpaceMatrix",  LightSpaceMatrix );
+
+    shader.setVec3("uLightColor", lights[0].color);
+
+    shader.setMat4("uInverseProjectionMatrix", glm::inverse(projectionMatrix));
+    shader.setMat4("uInverseViewMatrix", glm::inverse(viewMatrix));
+    
+    
+    // 绘制网格
+    glBindVertexArray(quadVAO);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+    glBindVertexArray(0);
+}
+
+void CScene::SetupScreenQuadVAO(unsigned int &quadVAO)
+{
+    float quadVertices[] = {
+        // positions   // texCoords
+        -1.0f,  1.0f,  0.0f, 1.0f,
+        -1.0f, -1.0f,  0.0f, 0.0f,
+         1.0f, -1.0f,  1.0f, 0.0f,
+
+        -1.0f,  1.0f,  0.0f, 1.0f,
+         1.0f, -1.0f,  1.0f, 0.0f,
+         1.0f,  1.0f,  1.0f, 1.0f
+    };
+
+    unsigned int quadVBO;
+    glGenVertexArrays(1, &quadVAO);
+    glGenBuffers(1, &quadVBO);
+    glBindVertexArray(quadVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+    glBindVertexArray(0);
 }

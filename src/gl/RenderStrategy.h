@@ -16,12 +16,11 @@ class RenderStrategy{
         int HEIGHT ;
         virtual int initOpenGl() = 0;
         virtual void Draw(GLFWwindow *window,CCamera *Ccamera,std::map<std::string,std::string> ShaderPathes) = 0;
-        virtual void framebuffer_size_callback_impl(GLFWwindow* window, int width, int height);
+        virtual void framebuffer_size_callback_impl(GLFWwindow* window, int width, int height)=0;
 };
 
 class IBLRenderStrategy : public RenderStrategy{
-
-    
+   
 public:
 
         int WIDTH ;
