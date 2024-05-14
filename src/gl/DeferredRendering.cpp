@@ -1,5 +1,6 @@
 #include "gl/DeferredRendering.h"
 #include "DeferredRendering.h"
+#include <random>
 
 DeferredRendering::DeferredRendering()
 {
@@ -172,6 +173,10 @@ void DeferredRendering::Draw(GLFWwindow *window, CCamera *Ccamera, std::map<std:
 
         DeferredPassDraw(ShaderPathes);
 
+        SSAODraw(ShaderPathes);
+
+        SSAOBlurDraw(ShaderPathes);
+
         LightingPassDraw(Albedo_Flages, Specular_Occlusion, Normal_Smoothness,rboDepth,ShaderPathes);
 
 
@@ -191,7 +196,6 @@ void DeferredRendering::DeferredPassDraw(std::map<std::string, std::string> Shad
     gbuffershader.use();
     scene->DeferredDrawModel(gbuffershader);
 
-
 }
 
 void DeferredRendering::LightingPassDraw(GLuint Albedo_Flages, GLuint Specular_Occlusion,GLuint Normal_Smoothness,GLuint rboDepth,std::map<std::string, std::string> ShaderPathes)
@@ -201,7 +205,84 @@ void DeferredRendering::LightingPassDraw(GLuint Albedo_Flages, GLuint Specular_O
     glClear(GL_COLOR_BUFFER_BIT);
     Shader lightingShader(ShaderPathes["lightingPassShader"]+"vertex.glsl", ShaderPathes["lightingPassShader"]+"fragment.glsl");
     lightingShader.use();
-    scene->LightingDrawModel(Albedo_Flages, Specular_Occlusion,Normal_Smoothness,rboDepth,lightingShader);
+    scene->LightingDrawModel(Albedo_Flages, Specular_Occlusion,Normal_Smoothness,rboDepth,ssaoColorBufferBlur,lightingShader);
+}
+GLfloat lerp(GLfloat a, GLfloat b, GLfloat f)
+{
+    return a + f * (b - a);
+}
+void DeferredRendering::SSAODraw(std::map<std::string, std::string> ShaderPathes)
+{ 
+    std::uniform_real_distribution<GLfloat> randomFloats(0.0, 1.0); // 随机浮点数，范围0.0 - 1.0
+    std::default_random_engine generator;
+    std::vector<glm::vec3> ssaoKernel;
+    for (GLuint i = 0; i < 64; ++i)
+    {
+        glm::vec3 sample(
+            randomFloats(generator) * 2.0 - 1.0, 
+            randomFloats(generator) * 2.0 - 1.0, 
+            randomFloats(generator)
+        );
+        sample = glm::normalize(sample);
+        sample *= randomFloats(generator);
+        GLfloat scale = GLfloat(i) / 64.0; 
+        scale = lerp(0.1f, 1.0f, scale * scale);
+        sample *= scale;
+        ssaoKernel.push_back(sample);  
+          
+    }
+    std::vector<glm::vec3> ssaoNoise;
+    for (GLuint i = 0; i < 16; i++)
+    {
+        glm::vec3 noise(
+            randomFloats(generator) * 2.0 - 1.0, 
+            randomFloats(generator) * 2.0 - 1.0, 
+            0.0f); 
+        ssaoNoise.push_back(noise);
+    }
+    
+    glGenTextures(1, &noiseTexture);
+    glBindTexture(GL_TEXTURE_2D, noiseTexture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, 4, 4, 0, GL_RGB, GL_FLOAT, &ssaoNoise[0]);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+    glGenFramebuffers(1, &ssaoFBO);  
+    glBindFramebuffer(GL_FRAMEBUFFER, ssaoFBO);
+    
+    glGenTextures(1, &ssaoColorBuffer);
+    glBindTexture(GL_TEXTURE_2D, ssaoColorBuffer);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, WIDTH, HEIGHT, 0, GL_RED, GL_FLOAT, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, ssaoColorBuffer, 0);
+
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+    std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
+
+    Shader ssaoShader(ShaderPathes["SSAOshader"]+"vertex.glsl", ShaderPathes["SSAOshader"]+"fragment.glsl");  
+
+    scene->SSAODraw(ssaoFBO, ssaoShader, Normal_Smoothness, rboDepth, noiseTexture,ssaoKernel);
+
+}
+
+void DeferredRendering::SSAOBlurDraw(std::map<std::string, std::string> ShaderPathes)
+{
+    GLuint ssaoBlurFBO;
+    glGenFramebuffers(1, &ssaoBlurFBO);
+    glBindFramebuffer(GL_FRAMEBUFFER, ssaoBlurFBO);
+    glGenTextures(1, &ssaoColorBufferBlur);
+    glBindTexture(GL_TEXTURE_2D, ssaoColorBufferBlur);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, WIDTH, HEIGHT, 0, GL_RGB, GL_FLOAT, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, ssaoColorBufferBlur, 0);
+
+    Shader ssaoblurShader(ShaderPathes["ssaoBufferBlurshader"]+"vertex.glsl",ShaderPathes["ssaoBufferBlurshader"]+"fragment.glsl");
+
+    scene->SSAODrawBlur(ssaoblurShader,ssaoColorBuffer);
 
 }
 

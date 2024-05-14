@@ -77,13 +77,14 @@ public:
 
 
     void DeferredDrawModel(Shader shader);
-    void LightingDrawModel(GLuint Albedo_Flages, GLuint Specular_Occlusion,GLuint Normal_Smoothness,GLuint rboDepth,Shader shader);
 
-    void SetupScreenQuadVAO(unsigned int& quadVAO);
+    void SSAODrawBlur(Shader shader, GLuint SSAOTex);
 
+    void SSAODraw(GLuint &ssaoFBO, Shader shader, GLuint Normal_Smoothness, GLuint rboDepth, GLuint noiseTexture, std::vector<glm::vec3> &ssaoKernel);
 
+    void LightingDrawModel(GLuint Albedo_Flages, GLuint Specular_Occlusion, GLuint Normal_Smoothness, GLuint rboDepth, GLuint ssaoColorBuffer, Shader shader);
 
-
+    void SetupScreenQuadVAO(unsigned int &quadVAO);
 };
 
 #endif

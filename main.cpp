@@ -71,7 +71,7 @@ void initScene(std::vector<std::string>& modelPaths, std::map<std::string,std::s
     scene = CScene(WIDTH, HEIGHT);
 
     // 初始化相机
-    glm::vec3 camera_Pos(0.0f, 0.0f, 50.0f);
+    glm::vec3 camera_Pos(0.0f, 0.0f, 20.0f);
     glm::vec3 camera_UpVector(0.0, 1.0, 0.0);
     glm::vec3 camera_cameraTarget(0.0f, 0.0f, 0.0);
     camera = CCamera(camera_Pos, camera_UpVector, camera_cameraTarget);
@@ -104,6 +104,8 @@ void initShaderPathes(std::map<std::string,std::string>& ShaderPaths){
     ShaderPaths["cubemapShader"] = "src/shaders/cubemapshaders/";
     ShaderPaths["gbuffershader"] = "src/shaders/gbuffershaders/";
     ShaderPaths["lightingPassShader"] = "src/shaders/lightingPassShaders/";
+    ShaderPaths["SSAOshader"] = "src/shaders/SSAOshaders/";
+    ShaderPaths["ssaoBufferBlurshader"] ="src/shaders/ssaoBufferBlur/";
 }
 
 void initModelPathes(std::vector<std::string>& modelPaths){
@@ -111,7 +113,9 @@ void initModelPathes(std::vector<std::string>& modelPaths){
     std::string plane = "assets/plane/plane.obj";
     std::string gun = "assets/ganyu.fbx";
 
+
     //modelPaths.push_back(mary);
     //modelPaths.push_back(plane);
     modelPaths.push_back(gun);
+
 }

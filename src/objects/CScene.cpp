@@ -286,7 +286,67 @@ void CScene::DeferredDrawModel(Shader shader)
     }
 }
 
-void CScene::LightingDrawModel(GLuint Albedo_Flages, GLuint Specular_Occlusion,GLuint Normal_Smoothness,GLuint rboDepth,Shader shader)
+void CScene::SSAODrawBlur(Shader shader,GLuint SSAOTex)
+{
+    unsigned int quadVAO;
+    SetupScreenQuadVAO(quadVAO);
+    shader.use();
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, SSAOTex);
+    shader.setInt("ssaoInput", 0);
+
+
+    // 绘制网格
+    glBindVertexArray(quadVAO);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+    glBindVertexArray(0);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0); // unbind the FBO
+    
+
+
+}
+
+void CScene::SSAODraw(GLuint &ssaoFBO,Shader shader,GLuint Normal_Smoothness,GLuint rboDepth,GLuint noiseTexture,std::vector<glm::vec3> &ssaoKernel)
+{
+    unsigned int quadVAO ;
+    SetupScreenQuadVAO(quadVAO);
+    // 使用G缓冲渲染SSAO纹理
+    glBindFramebuffer(GL_FRAMEBUFFER, ssaoFBO);
+    glClear(GL_COLOR_BUFFER_BIT);
+    shader.use();
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, Normal_Smoothness);
+    shader.setInt("Normal_Smoothness", 0);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, rboDepth);
+    shader.setInt("rboDepth",1);
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, noiseTexture);
+    shader.setInt("texNoise",2);
+
+
+    shader.setMat4("uProjectionMatrix", projectionMatrix);
+    
+    for (unsigned int i = 0; i < 64; ++i) {
+    std::string name = "samples[" + std::to_string(i) + "]";
+    shader.setVec3(name, ssaoKernel[i]);
+    }
+
+    shader.setVec2("uNoiseScale", glm::vec2(Width / 4.0, Height / 4.0));
+    shader.setMat4("uInverseProjectionMatrix", glm::inverse(projectionMatrix));
+    shader.setMat4("uInverseViewMatrix", glm::inverse(viewMatrix));
+    shader.setFloat("radius",1.0f);
+
+    // 绘制网格
+    glBindVertexArray(quadVAO);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+    glBindVertexArray(0);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0); // unbind the FBO
+
+}
+
+void CScene::LightingDrawModel(GLuint Albedo_Flages, GLuint Specular_Occlusion,GLuint Normal_Smoothness,GLuint rboDepth,GLuint ssaoColorBuffer,Shader shader)
 {
     shader.use();
 
@@ -316,6 +376,10 @@ void CScene::LightingDrawModel(GLuint Albedo_Flages, GLuint Specular_Occlusion,G
     glBindTexture(GL_TEXTURE_2D, rboDepth);
     shader.setInt("rboDepth", 4);
 
+    glActiveTexture(GL_TEXTURE5);
+    glBindTexture(GL_TEXTURE_2D, ssaoColorBuffer);
+    shader.setInt("SSAOTEexture",5);
+
 
     //设置光源
     setupLight(shader);
@@ -329,6 +393,7 @@ void CScene::LightingDrawModel(GLuint Albedo_Flages, GLuint Specular_Occlusion,G
 
     shader.setMat4("uInverseProjectionMatrix", glm::inverse(projectionMatrix));
     shader.setMat4("uInverseViewMatrix", glm::inverse(viewMatrix));
+    shader.setMat4("uViewMatrix", viewMatrix);
     
     
     // 绘制网格

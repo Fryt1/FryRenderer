@@ -9,6 +9,7 @@ uniform sampler2D Normal_Smoothness;
 uniform sampler2D Specular_Occlusion;
 uniform sampler2D uShadowMap;
 uniform sampler2D rboDepth;
+uniform sampler2D SSAOTEexture;
 
 
 uniform vec3 uLightdirection;
@@ -17,6 +18,7 @@ uniform float uLightIntensity;
 
 uniform mat4 uLightSpaceMatrix;
 
+uniform mat4 uViewMatrix;
 uniform mat4 uInverseProjectionMatrix;
 uniform mat4 uInverseViewMatrix;
 
@@ -168,6 +170,16 @@ vec3 ScreenToWorld(vec2 screenPos, float depth)
     return worldSpacePosition.xyz;
 }
 
+vec3 ScreenToView(vec2 screenPos, float depth)
+{
+    // Convert screen position to clip space
+    vec4 clipSpacePosition = vec4(screenPos * 2.0 - 1.0, depth * 2.0 - 1.0, 1.0);
+    // Convert clip space position to view space
+    vec4 viewSpacePosition = uInverseProjectionMatrix * clipSpacePosition;
+
+    return viewSpacePosition.xyz;
+}
+
 
 void main() {
 
@@ -179,28 +191,33 @@ void main() {
   float roughness = Normal_Smoothness.a; // 你需要根据你的需求来设置这个值
   vec3 lightDir = -normalize(uLightdirection);
 
-  vec3 normal = Normal_Smoothness.rgb;// 将法线从切线空间转换到世界空间
+  vec3 normal_WS = Normal_Smoothness.rgb;// 将法线从切线空间转换到世界空间
+  
   float depth = texture(rboDepth, TexCoords).r;
   vec3 vFragPos_WS = ScreenToWorld(TexCoords, depth);
-  float shadow = CalcShadowFactor(vFragPos_WS, normal, lightDir);//计算阴影
+  
+  float shadow = CalcShadowFactor(vFragPos_WS, normal_WS, lightDir);//计算阴影
   vec3 viewDir = normalize(uCameraPos - vFragPos_WS);
   vec3 halfwayDir = normalize(lightDir + viewDir);
 
 
+
   //Li
-  vec3 Li = CalcLightingTerm(uLightColor, lightDir, normal)*uLightIntensity;
+  vec3 Li = CalcLightingTerm(uLightColor, lightDir, normal_WS)*uLightIntensity;
 
   // 计算镜面反射
   vec3 F0 = vec3(0.04);
   vec3 F90 = vec3(Albedo_Flages.rgb);
   vec3 fresnel = fresnelSchlickRoughness(max(dot(halfwayDir, viewDir), 0.0), F0, roughness, F90);
-  float NDF = DistributionGGX(normal, halfwayDir, roughness);
-  float G = GeometrySmith(normal, viewDir, lightDir, roughness);
+  float NDF = DistributionGGX(normal_WS, halfwayDir, roughness);
+  float G = GeometrySmith(normal_WS, viewDir, lightDir, roughness);
   vec3 ks = fresnel;
-  vec3 specularBrdf = (NDF * G) * ks / (4.0 * max(dot(normal, viewDir), 0.0) * max(dot(normal, lightDir), 0.0));
+  vec3 specularBrdf = (NDF * G) * ks / (4.0 * max(dot(normal_WS, viewDir), 0.0) * max(dot(normal_WS, lightDir), 0.0));
 
   // 计算环境光
-  vec3 ambient = vec3(0.03) * Albedo_Flages.rgb;
+  //ao
+  float ao = texture(SSAOTEexture,TexCoords).r;
+  vec3 ambient = vec3(0.03) * Albedo_Flages.rgb * ao;
 
   // 计算漫反射
   vec3 kD = 1.0 - ks;
@@ -208,12 +225,14 @@ void main() {
   vec3 diffuseBrdf = Albedo_Flages.rgb * kD / PI;
 
   // 计算光照
-  float NdotL = max(dot(normal, lightDir), 0.0); 
-  vec3 Lo = (diffuseBrdf + specularBrdf) * Li * NdotL  ;
-
-  vec3  color = Lo +ambient;
+  float NdotL = max(dot(normal_WS, lightDir), 0.0); 
+  vec3 Lo = (diffuseBrdf + specularBrdf) * Li * NdotL;
 
 
+
+  vec3  color = Lo  + ambient;
+
+  color = color / (color + vec3(1.0));
 
   // 计算阴影
   float shadowFactor = 1.0 - shadow * 0.3;

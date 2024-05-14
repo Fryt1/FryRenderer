@@ -25,6 +25,10 @@ class DeferredRendering : public RenderStrategy{
         GLuint gBuffer;
         GLuint Albedo_Flages, Specular_Occlusion, Normal_Smoothness;
         GLuint rboDepth;
+        GLuint noiseTexture;
+        GLuint ssaoColorBuffer;
+        GLuint ssaoColorBufferBlur ;
+        GLuint ssaoFBO;
 
         DeferredRendering();
         DeferredRendering(int width, int height);
@@ -35,11 +39,15 @@ class DeferredRendering : public RenderStrategy{
             ShadowSetting shadowSetting,CImage cubemap,std::map<std::string,std::string> ShaderPathes);
         void Draw(GLFWwindow *window,CCamera *Ccamera,std::map<std::string,std::string> ShaderPathes);
         void DeferredPassDraw(std::map<std::string,std::string> ShaderPathes);
-        void LightingPassDraw(GLuint Albedo_Flages, GLuint Specular_Occlusion,GLuint Normal_Smoothness,GLuint rboDepth,std::map<std::string,std::string> ShaderPathes);        
+        void LightingPassDraw(GLuint Albedo_Flages, GLuint Specular_Occlusion,GLuint Normal_Smoothness,GLuint rboDepth,std::map<std::string,std::string> ShaderPathes);
 
 
-        
-        //回调函数
+        void SSAODraw(std::map<std::string, std::string> ShaderPathes);
+
+        void SSAOBlurDraw(std::map<std::string, std::string> ShaderPathes);
+
+
+        // 回调函数
         static void framebuffer_size_callback(GLFWwindow* window, int width, int height);
         void framebuffer_size_callback_impl(GLFWwindow* window, int width, int height);
         static void mouse_callback(GLFWwindow* window, double xpos, double ypos);
