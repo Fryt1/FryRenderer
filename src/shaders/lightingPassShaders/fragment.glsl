@@ -184,6 +184,7 @@ vec3 ScreenToView(vec2 screenPos, float depth)
 void main() {
 
   vec4 Albedo_Flages = texture(Albedo_Flages, TexCoords);
+  Albedo_Flages =vec4(pow(vec3(Albedo_Flages.rgb), vec3(2.2)),Albedo_Flages.a);
   vec4 Normal_Smoothness = texture(Normal_Smoothness, TexCoords);
   vec4 Specular_Occlusion = texture(Specular_Occlusion, TexCoords);
 
@@ -212,12 +213,13 @@ void main() {
   float NDF = DistributionGGX(normal_WS, halfwayDir, roughness);
   float G = GeometrySmith(normal_WS, viewDir, lightDir, roughness);
   vec3 ks = fresnel;
-  vec3 specularBrdf = (NDF * G) * ks / (4.0 * max(dot(normal_WS, viewDir), 0.0) * max(dot(normal_WS, lightDir), 0.0));
+
+  vec3 specularBrdf = (NDF * G) * ks / (4.0 * max(dot(normal_WS, viewDir), 0.0) * max(dot(normal_WS, lightDir), 0.0)+0.001);
 
   // 计算环境光
   //ao
   float ao = texture(SSAOTEexture,TexCoords).r;
-  vec3 ambient = vec3(0.03) * Albedo_Flages.rgb * ao;
+  vec3 ambient = vec3(0.5) * Albedo_Flages.rgb * ao;
 
   // 计算漫反射
   vec3 kD = 1.0 - ks;
@@ -235,7 +237,7 @@ void main() {
   color = color / (color + vec3(1.0));
 
   // 计算阴影
-  float shadowFactor = 1.0 - shadow * 0.3;
+  float shadowFactor = 1.0 - shadow * 0.05;
   shadowFactor = mix(shadowFactor, 1.0, 0.5); // 调整阴影混合因子，使阴影更柔和
   vec3 lighting = color * shadowFactor;
 

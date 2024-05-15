@@ -71,13 +71,13 @@ void initScene(std::vector<std::string>& modelPaths, std::map<std::string,std::s
     scene = CScene(WIDTH, HEIGHT);
 
     // 初始化相机
-    glm::vec3 camera_Pos(0.0f, 0.0f, 20.0f);
+    glm::vec3 camera_Pos(0.0f, 10.0f, 20.0f);
     glm::vec3 camera_UpVector(0.0, 1.0, 0.0);
     glm::vec3 camera_cameraTarget(0.0f, 0.0f, 0.0);
     camera = CCamera(camera_Pos, camera_UpVector, camera_cameraTarget);
 
     // 初始化光源
-    glm::vec3 light_Dir(0.0f, 0.0f, -1.0f);
+    glm::vec3 light_Dir(0.0f, 0.7f, -1.0f);
     glm::vec3 light_Color(1.0f, 1.0f, 1.0f);
     float light_instansity = 1.0f;
     light = CLight(light_Dir, light_instansity, light_Color);
@@ -112,10 +112,12 @@ void initModelPathes(std::vector<std::string>& modelPaths){
     std::string mary = "assets/mary/Marry.obj";
     std::string plane = "assets/plane/plane.obj";
     std::string gun = "assets/ganyu.fbx";
+    std::string Ensk_Station = "assets/Ensk_station_fbx/Ensk_station.fbx";
 
 
     //modelPaths.push_back(mary);
     //modelPaths.push_back(plane);
     modelPaths.push_back(gun);
+    //modelPaths.push_back(Ensk_Station);
 
 }
