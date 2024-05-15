@@ -26,7 +26,7 @@ void initScene(std::vector<std::string>& modelPaths, std::map<std::string,std::s
 
 int main() {
 
-    DeferredRendering renderStrategy(WIDTH,HEIGHT);
+    IBLRenderStrategy renderStrategy(WIDTH,HEIGHT);
     
     if(renderStrategy.initOpenGl()==-1)
     {
@@ -71,7 +71,7 @@ void initScene(std::vector<std::string>& modelPaths, std::map<std::string,std::s
     scene = CScene(WIDTH, HEIGHT);
 
     // 初始化相机
-    glm::vec3 camera_Pos(0.0f, 10.0f, 20.0f);
+    glm::vec3 camera_Pos(0.0f, 10.0f, 30.0f);
     glm::vec3 camera_UpVector(0.0, 1.0, 0.0);
     glm::vec3 camera_cameraTarget(0.0f, 0.0f, 0.0);
     camera = CCamera(camera_Pos, camera_UpVector, camera_cameraTarget);
@@ -89,7 +89,7 @@ void initScene(std::vector<std::string>& modelPaths, std::map<std::string,std::s
 
     // Cubemap初始化
     if (initCubemap) {
-        cubemap.load_HdrImage("assets/HDR/hdir/aircraft_workshop_01_4k.hdr");
+        cubemap.load_HdrImage("assets/HDR/hdir/autoshop_01_4k.hdr");
     }
 }
 
@@ -113,11 +113,16 @@ void initModelPathes(std::vector<std::string>& modelPaths){
     std::string plane = "assets/plane/plane.obj";
     std::string gun = "assets/ganyu.fbx";
     std::string Ensk_Station = "assets/Ensk_station_fbx/Ensk_station.fbx";
+    std::string car ="assets/Batmobile/batmobile.fbx";
+
+    std::string rock ="assets/rockgr-21/Rock_group_21.fbx";
 
 
     //modelPaths.push_back(mary);
     //modelPaths.push_back(plane);
-    modelPaths.push_back(gun);
-    //modelPaths.push_back(Ensk_Station);
+    //modelPaths.push_back(gun);
+    modelPaths.push_back(Ensk_Station);
+    //modelPaths.push_back(car);
+    //modelPaths.push_back(rock);
 
 }

@@ -48,6 +48,24 @@ void CMesh::Draw(Shader shader,int texturenum)
         glBindTexture(GL_TEXTURE_2D, textures[i].id);
     }
     glActiveTexture(GL_TEXTURE0);
+    struct TextureType {
+        std::string name;
+        int count;
+    };
+
+    TextureType textureTypes[] = {
+        {"useDiffuse", diffuseNr},
+        {"useSpecular", specularNr},
+        {"useNormal", normalNr},
+        {"useEmissive", emissiveNr},
+        {"useRoughness", roughnessNr},
+        {"useMetallic", metallicNr}
+    };
+
+    for (TextureType& type : textureTypes) {
+        shader.setBool(type.name, type.count > 1);
+    }
+
 
     // 绘制网格
     glBindVertexArray(VAO);

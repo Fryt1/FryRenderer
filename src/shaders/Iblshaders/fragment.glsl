@@ -3,12 +3,19 @@
 precision mediump float;
 #endif
 uniform sampler2D texture_diffuse1;
+uniform bool useDiffuse;
 uniform sampler2D texture_specular1;
+uniform bool useSpecular;
 uniform sampler2D texture_normal1;
+uniform bool useNormal;
 uniform sampler2D texture_height1;
+uniform bool useHeight;
 uniform sampler2D texture_metallic1;
+uniform bool useMetallic;
 uniform sampler2D texture_roughness1;
+uniform bool useRoughness;
 uniform sampler2D texture_emission1;
+uniform bool useEmission;
 uniform sampler2D uShadowMap;
 
 uniform bool useTexture;
@@ -172,17 +179,34 @@ vec3 color;
   } else {
       color = vec3(0.7);
   }
-  
-  float metallic = texture2D(texture_metallic1,vTextureCoord).r; // 你需要根据你的需求来设置这个值
-  float roughness = texture2D(texture_roughness1,vTextureCoord).r; // 你需要根据你的需求来设置这个值
+
+  float metallic = 0.3;
+  if(useMetallic)
+  {
+    metallic = texture2D(texture_metallic1,vTextureCoord).r;
+  }
+
+  float roughness = 0.3;
+  if(useRoughness)
+  {
+    roughness = texture2D(texture_roughness1,vTextureCoord).r;
+  }
   vec3 lightDir = -normalize(uLightdirection);
-  vec3 normalTexture = texture(texture_normal1, vTextureCoord).rgb;
-  normalTexture = normalTexture * 2.0 - 1.0; // 将法线贴图的颜色从[0,1]转换到[-1,1]
-  vec3 T = normalize(vTangent_WS);
-  vec3 N = normalize(vNormal_WS);
-  vec3 B = cross(N, T);
-  mat3 TBN = mat3(T, B, N); // 切线空间到世界空间的变换矩阵
-  vec3 normal = normalize(TBN * normalTexture); // 将法线从切线空间转换到世界空间
+  vec3 normal = normalize(vNormal_WS);
+  // 法线贴图
+  if(useNormal)
+  {
+    vec3 normalTexture = texture(texture_normal1, vTextureCoord).rgb;
+    normalTexture = normalTexture * 2.0 - 1.0; // 将法线贴图的颜色从[0,1]转换到[-1,1]
+    vec3 T = normalize(vTangent_WS);
+    vec3 N = normalize(vNormal_WS);
+    vec3 B = cross(N, T);
+    mat3 TBN = mat3(T, B, N); // 切线空间到世界空间的变换矩阵
+    normal = normalize(TBN * normalTexture); // 将法线从切线空间转换到世界空间
+
+  }
+
+  //
   float shadow = CalcShadowFactor(vFragPos_WS, normal, lightDir);//计算阴影
   vec3 viewDir = normalize(uCameraPos - vFragPos_WS);
   vec3 halfwayDir = normalize(lightDir + viewDir);
@@ -193,7 +217,7 @@ vec3 color;
 
   //光照项
   vec3 R = reflect(-viewDir, normal); 
-  const float MAX_REFLECTION_LOD = 4.0;
+  const float MAX_REFLECTION_LOD = 3.0;
   
   vec3 prefilteredColor = textureLod(prefilterMap, R,  roughness * MAX_REFLECTION_LOD).rgb;  
   
@@ -217,6 +241,8 @@ vec3 color;
 
   //计算反射方程
   vec3 Lo = specular + diffuse;
+
+  Lo = Lo/(1.0 + Lo);
 
   // 计算阴影
   float shadowFactor = 1.0 - shadow * 0.3;
