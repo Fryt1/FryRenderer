@@ -1,7 +1,9 @@
-<<<<<<< HEAD
+
 # FryRenderer
 
-**FryRenderer**是基于opengl的渲染器，引入**Assimp库**实现不同格式模型的导入，引用**stb_image库**导入纹理
+**FryRenderer**是基于opengl的渲染器
+
+引入**Assimp库**实现不同格式模型的导入，引用**stb_image库**导入纹理
 
 
 
